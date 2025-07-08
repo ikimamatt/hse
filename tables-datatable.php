@@ -1,23 +1,26 @@
-<?php include 'layouts/session.php'; ?>
-<?php include 'layouts/head-main.php'; ?>
-
 <?php
-// Database connection
-$host = 'localhost';
-$user = 'root';
-$pass = '';
-$db   = 'hse_reports_db';
+// Menggunakan session dan file head-main
+include 'layouts/session.php';
+include 'layouts/head-main.php';
 
-$conn = new mysqli($host, $user, $pass, $db);
-if ($conn->connect_error) {
-    die("Koneksi ke database gagal: " . $conn->connect_error);
+// [DIUBAH] Menggunakan koneksi PDO dari conf.php
+// Pastikan file conf.php berisi koneksi PDO seperti contoh sebelumnya
+require_once 'layouts/conf.php';
+
+// Array untuk menampung semua laporan
+$all_reports = [];
+
+try {
+    // [DIUBAH] Mengambil data utama dengan PDO
+    $sql = "SELECT id, report_date FROM daily_reports ORDER BY report_date DESC";
+    $stmt = $pdo->prepare($sql);
+    $stmt->execute();
+    $all_reports = $stmt->fetchAll(); // fetchAll() mengambil semua baris sekaligus
+
+} catch (PDOException $e) {
+    // Menangani error jika query gagal
+    die("Gagal mengambil data laporan: " . $e->getMessage());
 }
-
-// [DIUBAH] Ambil semua data laporan sekali saja dan simpan di array
-$reports_query = "SELECT id, report_date FROM daily_reports ORDER BY report_date DESC";
-$reports_result = $conn->query($reports_query);
-$all_reports = $reports_result->fetch_all(MYSQLI_ASSOC);
-
 ?>
 
 <head>
@@ -30,6 +33,7 @@ $all_reports = $reports_result->fetch_all(MYSQLI_ASSOC);
     <?php include 'layouts/head-style.php'; ?>
 
     <style>
+        /* CSS tidak perlu diubah */
         .report-container-modal { font-family: Arial, sans-serif; font-size: 14px; color: #333; }
         .report-container-modal .header { text-align: center; margin-bottom: 20px; }
         .report-container-modal .header h1 { font-size: 18px; font-weight: bold; margin: 0; color: #000; }
@@ -83,7 +87,7 @@ $all_reports = $reports_result->fetch_all(MYSQLI_ASSOC);
                                     </thead>
                                     <tbody>
                                         <?php
-                                        // [LOOP PERTAMA] Hanya untuk membuat baris tabel
+                                        // LOOP PERTAMA: Membuat baris tabel
                                         $no = 1;
                                         foreach ($all_reports as $report) {
                                         ?>
@@ -106,15 +110,13 @@ $all_reports = $reports_result->fetch_all(MYSQLI_ASSOC);
                                                     <div class="btn-group">
                                                         <button type="button" class="btn btn-success dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false">Export <i class="mdi mdi-chevron-down"></i></button>
                                                         <div class="dropdown-menu">
-                                                            <a class="dropdown-item" href="#">Excel</a>
-                                                            <a class="dropdown-item" href="#">PDF</a>
+                                                            <a class="dropdown-item" href="export/hsedailyexcel.php?report_id=<?php echo $report['id']; ?>">Excel</a>
+                                                            <a class="dropdown-item" href="export/hsedailypdf.php?report_id=<?php echo $report['id']; ?>">PDF</a>
                                                         </div>
                                                     </div>
                                                 </td>
                                             </tr>
-                                        <?php
-                                        } // Akhir dari loop pertama
-                                        ?>
+                                        <?php } ?>
                                     </tbody>
                                 </table>
                             </div>
@@ -128,15 +130,32 @@ $all_reports = $reports_result->fetch_all(MYSQLI_ASSOC);
 </div>
 
 <?php
-// [LOOP KEDUA] Hanya untuk membuat HTML modal yang tersembunyi
+// LOOP KEDUA: Membuat HTML untuk semua modal
 foreach ($all_reports as $report) {
-    $modal_report_id = $report['id'];
-    // Ambil data detail untuk setiap modal
-    $header_data = $conn->query("SELECT * FROM daily_reports WHERE id = $modal_report_id")->fetch_assoc();
-    if ($header_data) {
-        $bsoc_cards = $conn->query("SELECT * FROM bsoc_card_reports WHERE report_id = $modal_report_id ORDER BY entry_number ASC")->fetch_all(MYSQLI_ASSOC);
-        $contributions = $conn->query("SELECT * FROM bsoc_monthly_contribution WHERE report_id = $modal_report_id")->fetch_all(MYSQLI_ASSOC);
-        $hse_summary = $conn->query("SELECT * FROM hse_summary WHERE report_id = $modal_report_id")->fetch_all(MYSQLI_ASSOC);
+    try {
+        // [DIUBAH] Menggunakan prepared statement PDO untuk keamanan
+        $modal_report_id = $report['id'];
+        
+        // Query untuk header
+        $stmt_header = $pdo->prepare("SELECT * FROM daily_reports WHERE id = ?");
+        $stmt_header->execute([$modal_report_id]);
+        $header_data = $stmt_header->fetch();
+
+        if ($header_data) {
+            // Query untuk bsoc cards
+            $stmt_bsoc = $pdo->prepare("SELECT * FROM bsoc_card_reports WHERE report_id = ? ORDER BY entry_number ASC");
+            $stmt_bsoc->execute([$modal_report_id]);
+            $bsoc_cards = $stmt_bsoc->fetchAll();
+
+            // Query untuk contributions
+            $stmt_contrib = $pdo->prepare("SELECT * FROM bsoc_monthly_contribution WHERE report_id = ?");
+            $stmt_contrib->execute([$modal_report_id]);
+            $contributions = $stmt_contrib->fetchAll();
+
+            // Query untuk hse summary
+            $stmt_summary = $pdo->prepare("SELECT * FROM hse_summary WHERE report_id = ?");
+            $stmt_summary->execute([$modal_report_id]);
+            $hse_summary = $stmt_summary->fetchAll();
 ?>
     <div class="modal fade" id="reportModal<?php echo $report['id']; ?>" tabindex="-1" role="dialog" aria-labelledby="reportModalLabel<?php echo $report['id']; ?>" aria-hidden="true">
         <div class="modal-dialog modal-xl">
@@ -147,7 +166,7 @@ foreach ($all_reports as $report) {
                 </div>
                 <div class="modal-body">
                     <div class="report-container-modal">
-                        <div class="header">
+                         <div class="header">
                             <h1>Great Wall Drilling Company</h1>
                             <p>Daily HSE Report</p>
                             <p><?php echo htmlspecialchars(date('l, d F Y', strtotime($header_data['report_date']))); ?></p>
@@ -211,9 +230,9 @@ foreach ($all_reports as $report) {
                                 </tr>
                             </thead>
                             <tbody>
-                                <?php foreach ($contributions as $row): 
+                                <?php if (!empty($contributions)): foreach ($contributions as $row): 
                                      $total_contributions = array_sum(array_column($contributions, 'total'));
-                                     $percentage = ($total_contributions > 0) ? (($row['total'] ?? 0) / $total_contributions) * 100 : 0;
+                                     $percentage = ($row['percentage'] ?? 0) * 100;
                                 ?>
                                 <tr>
                                     <td><?php echo htmlspecialchars($row['entity_name'] ?? ''); ?></td>
@@ -223,7 +242,7 @@ foreach ($all_reports as $report) {
                                     <td class="text-center"><?php echo htmlspecialchars($row['safe_work'] ?? '0'); ?></td>
                                     <td class="text-center"><?php echo htmlspecialchars($row['total'] ?? '0'); ?> / <?php echo number_format($percentage, 2); ?>%</td>
                                 </tr>
-                                <?php endforeach; ?>
+                                <?php endforeach; endif; ?>
                             </tbody>
                         </table>
                         <div class="summary-section">
@@ -252,9 +271,16 @@ foreach ($all_reports as $report) {
         </div>
     </div>
 <?php
-    } // Akhir dari if($header_data)
-} // Akhir dari loop kedua
-$conn->close();
+        } // akhir if($header_data)
+    } catch (PDOException $e) {
+        // Jika ada error saat fetching data untuk modal, bisa ditangani di sini
+        // Misalnya dengan menampilkan pesan error di dalam modal
+        echo '<div class="modal fade" id="reportModal'.$report['id'].'">... Pesan Error ...</div>';
+    }
+} // akhir loop kedua
+
+// Menutup koneksi PDO
+$pdo = null;
 ?>
 
 <?php include 'layouts/right-sidebar.php'; ?>
