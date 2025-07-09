@@ -25,7 +25,7 @@ $templateFile = '../template/template_hse_report.xlsx';
 $config = [
     'bsoc_cards'    => ['start_row' => 10, 'max_rows' => 41],
     'contributions' => ['start_row' => 53, 'max_rows' => 17],
-    'hse_summary'   => ['start_row' => 71, 'max_rows' => 10]
+    'hse_summary'   => ['start_row' => 71, 'max_rows' => 13]
 ];
 // ===================================================================
 
