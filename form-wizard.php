@@ -1,87 +1,81 @@
 <?php
 include 'layouts/session.php';
 include 'layouts/head-main.php';
+require_once 'layouts/conf.php'; // Assuming conf.php contains PDO connection
 
-// Database connection
-$conn = new mysqli("localhost", "root", "", "gdap");
-if ($conn->connect_error) {
-    die("Connection failed: " . $conn->connect_error);
-}
+$report_data = [];
+$bsoc_cards_data = [];
+$monthly_contribution_data = [];
+$hse_summary_data = [];
+$report_id = $_GET['report_id'] ?? null;
 
-if ($_SERVER["REQUEST_METHOD"] == "POST") {
-    $entities = $_POST["entity"] ?? [];
-    $hazards = $_POST["hazard"] ?? [];
-    $unsafe_acts = $_POST["unsafe_act"] ?? [];
-    $near_misses = $_POST["near_miss"] ?? [];
-    $safe_works = $_POST["safe_work"] ?? [];
-    $totals = $_POST["total"] ?? [];
-    $activities = $_POST["activity"] ?? [];
+if ($report_id) {
+    try {
+        // Fetch daily report data
+        $stmt = $pdo->prepare("SELECT * FROM daily_reports WHERE id = ?");
+        $stmt->execute([$report_id]);
+        $report_data = $stmt->fetch(PDO::FETCH_ASSOC);
 
-    // Handle daily report creation
-    if (isset($_POST['submit_daily_report'])) {
-        $company_name = $_POST['company_name'] ?? null;
-        $report_date = $_POST['report_date'] ?? date('Y-m-d');
-        $zyh_startup_date = $_POST['zyh_startup_date'] ?? null;
-        $phm_startup_date = $_POST['phm_startup_date'] ?? null;
-        $no_lti_days_zyh = $_POST['no_lti_days_zyh'] ?? null;
-        $no_lti_days_phm = $_POST['no_lti_days_phm'] ?? null;
-        $total_bsoc_cards = $_POST['total_bsoc_cards'] ?? null;
-        $safe_cards = $_POST['safe_cards'] ?? null;
-        $unsafe_bsoc = $_POST['unsafe_bsoc'] ?? null;
-        $best_bsoc_title = $_POST['best_bsoc_title'] ?? null;
-        $best_bsoc_description = $_POST['best_bsoc_description'] ?? null;
-        $total_monthly_bsoc_cards = $_POST['total_monthly_bsoc_cards'] ?? null;
-        $doctor = $_POST['doctor'] ?? null; // Added doctor field
-        $prepared_by = $_POST['prepared_by'] ?? null;
+        // Fetch BSOC card reports
+        $stmt = $pdo->prepare("SELECT * FROM bsoc_card_reports WHERE report_id = ? ORDER BY entry_number ASC");
+        $stmt->execute([$report_id]);
+        $bsoc_cards_data = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
-        $stmt = $conn->prepare("INSERT INTO daily_reports (company_name, report_date, zyh_startup_date, phm_startup_date, no_lti_days_zyh, no_lti_days_phm, total_bsoc_cards, safe_cards, unsafe_bsoc, best_bsoc_title, best_bsoc_description, total_monthly_bsoc_cards, doctor, prepared_by) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
-        $stmt->bind_param("ssssiiiiissssi", $company_name, $report_date, $zyh_startup_date, $phm_startup_date, $no_lti_days_zyh, $no_lti_days_phm, $total_bsoc_cards, $safe_cards, $unsafe_bsoc, $best_bsoc_title, $best_bsoc_description, $total_monthly_bsoc_cards, $doctor, $prepared_by);
-        $stmt->execute();
-        $report_id = $conn->insert_id;
+        // Fetch BSOC monthly contribution
+        $stmt = $pdo->prepare("SELECT * FROM bsoc_monthly_contribution WHERE report_id = ?");
+        $stmt->execute([$report_id]);
+        $monthly_contribution_data = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
-        // Handle BSOC card reports
-        if (isset($_POST['observation'])) {
-            foreach ($_POST['observation'] as $obs) {
-                $entry_number = $obs['no'] ?? null;
-                $category = $obs['category'] ?? null;
-                $description = $obs['description'] ?? null;
-                $action_taken = null; // Placeholder, can be added later
-                $observer = null; // Placeholder, can be added later
-                $stmt = $conn->prepare("INSERT INTO bsoc_card_reports (report_id, entry_number, category, description, action_taken, observer) VALUES (?, ?, ?, ?, ?, ?)");
-                $stmt->bind_param("iissss", $report_id, $entry_number, $category, $description, $action_taken, $observer);
-                $stmt->execute();
-            }
-        }
+        // Fetch HSE Summary
+        $stmt = $pdo->prepare("SELECT * FROM hse_summary WHERE report_id = ?");
+        $stmt->execute([$report_id]);
+        $hse_summary_data = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
-        // Handle BSOC monthly contribution
-        for ($i = 0; $i < count($entities); $i++) {
-            $entity_name = $entities[$i] ?? null;
-            $hazard = $hazards[$i] ?? 0;
-            $unsafe_act = $unsafe_acts[$i] ?? 0;
-            $near_miss = $near_misses[$i] ?? 0;
-            $safe_work = $safe_works[$i] ?? 0;
-            $total = $totals[$i] ?? 0;
-            $percentage = 0; // Calculate if needed
-            $stmt = $conn->prepare("INSERT INTO bsoc_monthly_contribution (report_id, entity_name, hazard, unsafe_act, near_miss, safe_work, total, percentage) VALUES (?, ?, ?, ?, ?, ?, ?, ?)");
-            $stmt->bind_param("isiiiiid", $report_id, $entity_name, $hazard, $unsafe_act, $near_miss, $safe_work, $total, $percentage);
-            $stmt->execute();
-        }
-
-        // Handle HSE Summary
-        foreach ($activities as $index => $activity) {
-            if (!empty($activity)) {
-                $stmt = $conn->prepare("INSERT INTO hse_summary (report_id, activity_description) VALUES (?, ?)");
-                $stmt->bind_param("is", $report_id, $activity);
-                $stmt->execute();
-            }
-        }
-        // Redirect to tables-datatable.php after successful submission
-        header("Location: tables-datatable.php");
-        exit();
+    } catch (PDOException $e) {
+        // Handle error, e.g., log it or display a message
+        echo "Error: " . $e->getMessage();
     }
 }
-?>
 
+// Default values for form fields
+$company_name = $report_data['company_name'] ?? 'GWDC Indonesia';
+$report_date = $report_data['report_date'] ?? date('Y-m-d');
+$zyh_startup_date = $report_data['zyh_startup_date'] ?? '2025-06-01';
+$phm_startup_date = $report_data['phm_startup_date'] ?? '2025-06-15';
+$no_lti_days_zyh = $report_data['no_lti_days_zyh'] ?? '150';
+$no_lti_days_phm = $report_data['no_lti_days_phm'] ?? '145';
+$total_bsoc_cards = $report_data['total_bsoc_cards'] ?? '20';
+$safe_cards = $report_data['safe_cards'] ?? '15';
+$unsafe_bsoc = $report_data['unsafe_bsoc'] ?? '5';
+$best_bsoc_title = $report_data['best_bsoc_title'] ?? 'Safety Equipment Usage';
+$best_bsoc_description = $report_data['best_bsoc_description'] ?? 'Ensured all workers used proper PPE during operations.';
+$total_monthly_bsoc_cards = $report_data['total_monthly_bsoc_cards'] ?? '80';
+$doctor = $report_data['doctor'] ?? 'Dr. Smith';
+$prepared_by = $report_data['prepared_by'] ?? 'John Doe';
+$concern = $report_data['concerns'] ?? 'Need to improve equipment safety checks.'; // Assuming 'concerns' column exists
+
+// Default values for dynamic tables if no data is fetched
+if (empty($bsoc_cards_data)) {
+    $bsoc_cards_data = [
+        ['entry_number' => 1, 'category' => 'U/C', 'description' => 'Uncontrolled equipment movement']
+    ];
+}
+if (empty($monthly_contribution_data)) {
+    $monthly_contribution_data = [
+        ['entity_name' => 'GWDC', 'hazard' => 2, 'unsafe_act' => 1, 'near_miss' => 0, 'safe_work' => 5, 'total' => 8],
+        ['entity_name' => 'Client', 'hazard' => 1, 'unsafe_act' => 0, 'near_miss' => 1, 'safe_work' => 3, 'total' => 5],
+        ['entity_name' => '3rd Party', 'hazard' => 0, 'unsafe_act' => 2, 'near_miss' => 0, 'safe_work' => 4, 'total' => 6],
+        ['entity_name' => 'Catering', 'hazard' => 0, 'unsafe_act' => 0, 'near_miss' => 1, 'safe_work' => 2, 'total' => 3]
+    ];
+}
+if (empty($hse_summary_data)) {
+    $hse_summary_data = [
+        ['activity_description' => 'Attended GWDC and PHM supervisor morning meeting.'],
+        ['activity_description' => 'Attended and lead pre-tour meeting for day and night crew.'],
+        ['activity_description' => 'Daily walk through at the cement silo area.']
+    ];
+}
+?>
 <head>
     <title>Wizard | Minia - Admin & Dashboard Template</title>
     <?php include 'layouts/head.php'; ?>
@@ -149,7 +143,10 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                                     <div id="bar" class="progress mt-4">
                                         <div class="progress-bar bg-success progress-bar-striped progress-bar-animated"></div>
                                     </div>
-                                    <form method="post" action="backend/process_form.php" id="mainReportForm">
+                                    <form method="post" action="backend/hse_daily_report.php" id="mainReportForm">
+                                        <?php if ($report_id): ?>
+                                            <input type="hidden" name="report_id" value="<?php echo htmlspecialchars($report_id); ?>">
+                                        <?php endif; ?>
                                         <div class="tab-content twitter-bs-wizard-tab-content">
                                             <div class="tab-pane" id="progress-seller-details">
                                                 <div class="text-center mb-4">
@@ -159,13 +156,13 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                                                     <div class="col-lg-6">
                                                         <div class="mb-3">
                                                             <label for="company_name" class="form-label">Company Name</label>
-                                                            <input type="text" class="form-control" id="company_name" name="company_name" value="GWDC Indonesia">
+                                                            <input type="text" class="form-control" id="company_name" name="company_name" value="<?php echo htmlspecialchars($company_name); ?>">
                                                         </div>
                                                     </div>
                                                     <div class="col-lg-6">
                                                         <div class="mb-3">
                                                             <label for="report_date" class="form-label">Report Date</label>
-                                                            <input type="date" class="form-control" id="report_date" name="report_date" value="<?php echo date('Y-m-d'); ?>">
+                                                            <input type="date" class="form-control" id="report_date" name="report_date" value="<?php echo htmlspecialchars($report_date); ?>">
                                                         </div>
                                                     </div>
                                                 </div>
@@ -173,13 +170,13 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                                                     <div class="col-lg-6">
                                                         <div class="mb-3">
                                                             <label for="zyh_startup_date" class="form-label">ZYM Start-up Date</label>
-                                                            <input type="date" class="form-control" id="zyh_startup_date" name="zyh_startup_date" value="2025-06-01">
+                                                            <input type="date" class="form-control" id="zyh_startup_date" name="zyh_startup_date" value="<?php echo htmlspecialchars($zyh_startup_date); ?>">
                                                         </div>
                                                     </div>
                                                     <div class="col-lg-6">
                                                         <div class="mb-3">
                                                             <label for="phm_startup_date" class="form-label">PHM Start-up Date</label>
-                                                            <input type="date" class="form-control" id="phm_startup_date" name="phm_startup_date" value="2025-06-15">
+                                                            <input type="date" class="form-control" id="phm_startup_date" name="phm_startup_date" value="<?php echo htmlspecialchars($phm_startup_date); ?>">
                                                         </div>
                                                     </div>
                                                 </div>
@@ -187,13 +184,13 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                                                     <div class="col-lg-6">
                                                         <div class="mb-3">
                                                             <label for="no_lti_days_zyh" class="form-label">No LTI Days (ZYM)</label>
-                                                            <input type="number" class="form-control" id="no_lti_days_zyh" name="no_lti_days_zyh" value="150">
+                                                            <input type="number" class="form-control" id="no_lti_days_zyh" name="no_lti_days_zyh" value="<?php echo htmlspecialchars($no_lti_days_zyh); ?>">
                                                         </div>
                                                     </div>
                                                     <div class="col-lg-6">
                                                         <div class="mb-3">
                                                             <label for="no_lti_days_phm" class="form-label">No LTI Days (PHM)</label>
-                                                            <input type="number" class="form-control" id="no_lti_days_phm" name="no_lti_days_phm" value="145">
+                                                            <input type="number" class="form-control" id="no_lti_days_phm" name="no_lti_days_phm" value="<?php echo htmlspecialchars($no_lti_days_phm); ?>">
                                                         </div>
                                                     </div>
                                                 </div>
@@ -201,19 +198,19 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                                                     <div class="col-lg-4">
                                                         <div class="mb-3">
                                                             <label for="total_bsoc_cards" class="form-label">Total BSOC Cards</label>
-                                                            <input type="number" class="form-control" id="total_bsoc_cards" name="total_bsoc_cards" value="20">
+                                                            <input type="number" class="form-control" id="total_bsoc_cards" name="total_bsoc_cards" value="<?php echo htmlspecialchars($total_bsoc_cards); ?>">
                                                         </div>
                                                     </div>
                                                     <div class="col-lg-4">
                                                         <div class="mb-3">
                                                             <label for="safe_cards" class="form-label">Safe Cards</label>
-                                                            <input type="number" class="form-control" id="safe_cards" name="safe_cards" value="15">
+                                                            <input type="number" class="form-control" id="safe_cards" name="safe_cards" value="<?php echo htmlspecialchars($safe_cards); ?>">
                                                         </div>
                                                     </div>
                                                     <div class="col-lg-4">
                                                         <div class="mb-3">
                                                             <label for="unsafe_bsoc" class="form-label">Unsafe BSOC</label>
-                                                            <input type="number" class="form-control" id="unsafe_bsoc" name="unsafe_bsoc" value="5">
+                                                            <input type="number" class="form-control" id="unsafe_bsoc" name="unsafe_bsoc" value="<?php echo htmlspecialchars($unsafe_bsoc); ?>">
                                                         </div>
                                                     </div>
                                                 </div>
@@ -221,13 +218,13 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                                                     <div class="col-lg-12">
                                                         <div class="mb-3">
                                                             <label for="best_bsoc_title" class="form-label">Best BSOC Title</label>
-                                                            <input type="text" class="form-control" id="best_bsoc_title" name="best_bsoc_title" value="Safety Equipment Usage">
+                                                            <input type="text" class="form-control" id="best_bsoc_title" name="best_bsoc_title" value="<?php echo htmlspecialchars($best_bsoc_title); ?>">
                                                         </div>
                                                     </div>
                                                     <div class="col-lg-12">
                                                         <div class="mb-3">
                                                             <label for="best_bsoc_description" class="form-label">Best BSOC Description</label>
-                                                            <textarea class="form-control" id="best_bsoc_description" name="best_bsoc_description" rows="3">Ensured all workers used proper PPE during operations.</textarea>
+                                                            <textarea class="form-control" id="best_bsoc_description" name="best_bsoc_description" rows="3"><?php echo htmlspecialchars($best_bsoc_description); ?></textarea>
                                                         </div>
                                                     </div>
                                                 </div>
@@ -235,13 +232,13 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                                                     <div class="col-lg-6">
                                                         <div class="mb-3">
                                                             <label for="total_monthly_bsoc_cards" class="form-label">Total Monthly BSOC Cards</label>
-                                                            <input type="number" class="form-control" id="total_monthly_bsoc_cards" name="total_monthly_bsoc_cards" value="80">
+                                                            <input type="number" class="form-control" id="total_monthly_bsoc_cards" name="total_monthly_bsoc_cards" value="<?php echo htmlspecialchars($total_monthly_bsoc_cards); ?>">
                                                         </div>
                                                     </div>
                                                     <div class="col-lg-6">
                                                         <div class="mb-3">
                                                             <label for="prepared_by" class="form-label">Prepared By</label>
-                                                            <input type="text" class="form-control" id="prepared_by" name="prepared_by" value="John Doe">
+                                                            <input type="text" class="form-control" id="prepared_by" name="prepared_by" value="<?php echo htmlspecialchars($prepared_by); ?>">
                                                         </div>
                                                     </div>
                                                 </div>
@@ -256,16 +253,18 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                                                                 </tr>
                                                             </thead>
                                                             <tbody id="observations">
+                                                                <?php foreach ($bsoc_cards_data as $index => $card): ?>
                                                                 <tr>
-                                                                    <td><input type="number" class="form-control" name="observation[0][no]" value="1"></td>
+                                                                    <td><input type="number" class="form-control" name="observation[<?php echo $index; ?>][no]" value="<?php echo htmlspecialchars($card['entry_number']); ?>"></td>
                                                                     <td>
-                                                                        <select class="form-control" name="observation[0][category]">
-                                                                            <option value="U/C" selected>U/C</option>
-                                                                            <option value="U/A">U/A</option>
+                                                                        <select class="form-control" name="observation[<?php echo $index; ?>][category]">
+                                                                            <option value="U/C" <?php echo ($card['category'] == 'U/C') ? 'selected' : ''; ?>>U/C</option>
+                                                                            <option value="U/A" <?php echo ($card['category'] == 'U/A') ? 'selected' : ''; ?>>U/A</option>
                                                                         </select>
                                                                     </td>
-                                                                    <td><input type="text" class="form-control" name="observation[0][description]" value="Uncontrolled equipment movement"></td>
+                                                                    <td><input type="text" class="form-control" name="observation[<?php echo $index; ?>][description]" value="<?php echo htmlspecialchars($card['description']); ?>"></td>
                                                                 </tr>
+                                                                <?php endforeach; ?>
                                                             </tbody>
                                                         </table>
                                                         <button type="button" class="btn btn-secondary" onclick="addObservationRow()">Add Observation</button>
@@ -292,45 +291,23 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                                                         </tr>
                                                     </thead>
                                                     <tbody id="entries">
+                                                        <?php foreach ($monthly_contribution_data as $index => $row): ?>
                                                         <tr>
-                                                            <td><input type="text" class="form-control" name="entity[0]" value="GWDC" readonly></td>
-                                                            <td><input type="number" class="form-control" name="hazard[0]" value="2"></td>
-                                                            <td><input type="number" class="form-control" name="unsafe_act[0]" value="1"></td>
-                                                            <td><input type="number" class="form-control" name="near_miss[0]" value="0"></td>
-                                                            <td><input type="number" class="form-control" name="safe_work[0]" value="5"></td>
-                                                            <td><input type="text" class="form-control" name="total[0]" value="8" readonly></td>
+                                                            <td><input type="text" class="form-control" name="entity[<?php echo $index; ?>]" value="<?php echo htmlspecialchars($row['entity_name']); ?>" readonly></td>
+                                                            <td><input type="number" class="form-control" name="hazard[<?php echo $index; ?>]" value="<?php echo htmlspecialchars($row['hazard']); ?>"></td>
+                                                            <td><input type="number" class="form-control" name="unsafe_act[<?php echo $index; ?>]" value="<?php echo htmlspecialchars($row['unsafe_act']); ?>"></td>
+                                                            <td><input type="number" class="form-control" name="near_miss[<?php echo $index; ?>]" value="<?php echo htmlspecialchars($row['near_miss']); ?>"></td>
+                                                            <td><input type="number" class="form-control" name="safe_work[<?php echo $index; ?>]" value="<?php echo htmlspecialchars($row['safe_work']); ?>"></td>
+                                                            <td><input type="text" class="form-control" name="total[<?php echo $index; ?>]" value="<?php echo htmlspecialchars($row['total']); ?>" readonly></td>
                                                         </tr>
-                                                        <tr>
-                                                            <td><input type="text" class="form-control" name="entity[1]" value="Client" readonly></td>
-                                                            <td><input type="number" class="form-control" name="hazard[1]" value="1"></td>
-                                                            <td><input type="number" class="form-control" name="unsafe_act[1]" value="0"></td>
-                                                            <td><input type="number" class="form-control" name="near_miss[1]" value="1"></td>
-                                                            <td><input type="number" class="form-control" name="safe_work[1]" value="3"></td>
-                                                            <td><input type="text" class="form-control" name="total[1]" value="5" readonly></td>
-                                                        </tr>
-                                                        <tr>
-                                                            <td><input type="text" class="form-control" name="entity[2]" value="3rd Party" readonly></td>
-                                                            <td><input type="number" class="form-control" name="hazard[2]" value="0"></td>
-                                                            <td><input type="number" class="form-control" name="unsafe_act[2]" value="2"></td>
-                                                            <td><input type="number" class="form-control" name="near_miss[2]" value="0"></td>
-                                                            <td><input type="number" class="form-control" name="safe_work[2]" value="4"></td>
-                                                            <td><input type="text" class="form-control" name="total[2]" value="6" readonly></td>
-                                                        </tr>
-                                                        <tr>
-                                                            <td><input type="text" class="form-control" name="entity[3]" value="Catering" readonly></td>
-                                                            <td><input type="number" class="form-control" name="hazard[3]" value="0"></td>
-                                                            <td><input type="number" class="form-control" name="unsafe_act[3]" value="0"></td>
-                                                            <td><input type="number" class="form-control" name="near_miss[3]" value="1"></td>
-                                                            <td><input type="number" class="form-control" name="safe_work[3]" value="2"></td>
-                                                            <td><input type="text" class="form-control" name="total[3]" value="3" readonly></td>
-                                                        </tr>
+                                                        <?php endforeach; ?>
                                                     </tbody>
                                                 </table>
                                                 <div class="row">
                                                     <div class="col-lg-12">
                                                         <div class="mb-3">
                                                             <label class="form-label">Concern</label>
-                                                            <textarea class="form-control" id="concern" name="concern" rows="3" placeholder="Concern details">Need to improve equipment safety checks.</textarea>
+                                                            <textarea class="form-control" id="concern" name="concern" rows="3" placeholder="Concern details"><?php echo htmlspecialchars($concern); ?></textarea>
                                                         </div>
                                                     </div>
                                                 </div>
@@ -352,18 +329,12 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                                                             </tr>
                                                         </thead>
                                                         <tbody>
+                                                            <?php foreach ($hse_summary_data as $index => $activity): ?>
                                                             <tr>
-                                                                <td class="text-center align-middle">1.</td>
-                                                                <td><input type="text" class="form-control" name="activity[1]" value="Attended GWDC and PHM supervisor morning meeting."></td>
+                                                                <td class="text-center align-middle"><?php echo $index + 1; ?>.</td>
+                                                                <td><input type="text" class="form-control" name="activity[<?php echo $index + 1; ?>]" value="<?php echo htmlspecialchars($activity['activity_description']); ?>" required></td>
                                                             </tr>
-                                                            <tr>
-                                                                <td class="text-center align-middle">2.</td>
-                                                                <td><input type="text" class="form-control" name="activity[2]" value="Attended and lead pre-tour meeting for day and night crew."></td>
-                                                            </tr>
-                                                            <tr>
-                                                                <td class="text-center align-middle">3.</td>
-                                                                <td><input type="text" class="form-control" name="activity[3]" value="Daily walk through at the cement silo area."></td>
-                                                            </tr>
+                                                            <?php endforeach; ?>
                                                         </tbody>
                                                     </table>
                                                 </div>
@@ -374,7 +345,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                                                     <div class="col-lg-12">
                                                         <div class="mb-3">
                                                             <label for="doctor" class="form-label">Doctor</label>
-                                                            <input type="text" class="form-control" id="doctor" name="doctor" value="Dr. Smith">
+                                                            <input type="text" class="form-control" id="doctor" name="doctor" value="<?php echo htmlspecialchars($doctor); ?>">
                                                         </div>
                                                     </div>
                                                 </div>
@@ -393,89 +364,6 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                 </div>
             </div>
         </div>
-<?php
-include 'layouts/session.php';
-include 'layouts/head-main.php';
-
-// Database connection
-$conn = new mysqli("localhost", "root", "", "gdap");
-if ($conn->connect_error) {
-    die("Connection failed: " . $conn->connect_error);
-}
-
-if ($_SERVER["REQUEST_METHOD"] == "POST") {
-    $entities = $_POST["entity"] ?? [];
-    $hazards = $_POST["hazard"] ?? [];
-    $unsafe_acts = $_POST["unsafe_act"] ?? [];
-    $near_misses = $_POST["near_miss"] ?? [];
-    $safe_works = $_POST["safe_work"] ?? [];
-    $totals = $_POST["total"] ?? [];
-    $activities = $_POST["activity"] ?? [];
-
-    // Handle daily report creation
-    if (isset($_POST['submit_daily_report'])) {
-        $company_name = $_POST['company_name'] ?? null;
-        $report_date = $_POST['report_date'] ?? date('Y-m-d');
-        $zyh_startup_date = $_POST['zyh_startup_date'] ?? null;
-        $phm_startup_date = $_POST['phm_startup_date'] ?? null;
-        $no_lti_days_zyh = $_POST['no_lti_days_zyh'] ?? null;
-        $no_lti_days_phm = $_POST['no_lti_days_phm'] ?? null;
-        $total_bsoc_cards = $_POST['total_bsoc_cards'] ?? null;
-        $safe_cards = $_POST['safe_cards'] ?? null;
-        $unsafe_bsoc = $_POST['unsafe_bsoc'] ?? null;
-        $best_bsoc_title = $_POST['best_bsoc_title'] ?? null;
-        $best_bsoc_description = $_POST['best_bsoc_description'] ?? null;
-        $total_monthly_bsoc_cards = $_POST['total_monthly_bsoc_cards'] ?? null;
-        $doctor = $_POST['doctor'] ?? null; // Added doctor field
-        $prepared_by = $_POST['prepared_by'] ?? null;
-
-        $stmt = $conn->prepare("INSERT INTO daily_reports (company_name, report_date, zyh_startup_date, phm_startup_date, no_lti_days_zyh, no_lti_days_phm, total_bsoc_cards, safe_cards, unsafe_bsoc, best_bsoc_title, best_bsoc_description, total_monthly_bsoc_cards, doctor, prepared_by) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
-        $stmt->bind_param("ssssiiiiissssi", $company_name, $report_date, $zyh_startup_date, $phm_startup_date, $no_lti_days_zyh, $no_lti_days_phm, $total_bsoc_cards, $safe_cards, $unsafe_bsoc, $best_bsoc_title, $best_bsoc_description, $total_monthly_bsoc_cards, $doctor, $prepared_by);
-        $stmt->execute();
-        $report_id = $conn->insert_id;
-
-        // Handle BSOC card reports
-        if (isset($_POST['observation'])) {
-            foreach ($_POST['observation'] as $obs) {
-                $entry_number = $obs['no'] ?? null;
-                $category = $obs['category'] ?? null;
-                $description = $obs['description'] ?? null;
-                $action_taken = null; // Placeholder, can be added later
-                $observer = null; // Placeholder, can be added later
-                $stmt = $conn->prepare("INSERT INTO bsoc_card_reports (report_id, entry_number, category, description, action_taken, observer) VALUES (?, ?, ?, ?, ?, ?)");
-                $stmt->bind_param("iissss", $report_id, $entry_number, $category, $description, $action_taken, $observer);
-                $stmt->execute();
-            }
-        }
-
-        // Handle BSOC monthly contribution
-        for ($i = 0; $i < count($entities); $i++) {
-            $entity_name = $entities[$i] ?? null;
-            $hazard = $hazards[$i] ?? 0;
-            $unsafe_act = $unsafe_acts[$i] ?? 0;
-            $near_miss = $near_misses[$i] ?? 0;
-            $safe_work = $safe_works[$i] ?? 0;
-            $total = $totals[$i] ?? 0;
-            $percentage = 0; // Calculate if needed
-            $stmt = $conn->prepare("INSERT INTO bsoc_monthly_contribution (report_id, entity_name, hazard, unsafe_act, near_miss, safe_work, total, percentage) VALUES (?, ?, ?, ?, ?, ?, ?, ?)");
-            $stmt->bind_param("isiiiiid", $report_id, $entity_name, $hazard, $unsafe_act, $near_miss, $safe_work, $total, $percentage);
-            $stmt->execute();
-        }
-
-        // Handle HSE Summary
-        foreach ($activities as $index => $activity) {
-            if (!empty($activity)) {
-                $stmt = $conn->prepare("INSERT INTO hse_summary (report_id, activity_description) VALUES (?, ?)");
-                $stmt->bind_param("is", $report_id, $activity);
-                $stmt->execute();
-            }
-        }
-        // Redirect to tables-datatable.php after successful submission
-        header("Location: tables-datatable.php");
-        exit();
-    }
-}
-?>
 
         <div class="modal fade confirmModal" tabindex="-1" aria-hidden="true">
             <div class="modal-dialog modal-dialog-centered">

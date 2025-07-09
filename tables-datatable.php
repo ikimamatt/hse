@@ -101,8 +101,8 @@ try {
                                                     <div class="btn-group">
                                                         <button type="button" class="btn btn-primary dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false">Actions <i class="mdi mdi-chevron-down"></i></button>
                                                         <div class="dropdown-menu">
-                                                            <a class="dropdown-item" href="#">Update</a>
-                                                            <a class="dropdown-item" href="#">Delete</a>
+                                                            <a class="dropdown-item" href="form-wizard.php?report_id=<?php echo $report['id']; ?>">Update</a>
+                                                            <a class="dropdown-item" href="backend/hse_daily_report.php?action=delete&id=<?php echo $report['id']; ?>" onclick="return confirm('Are you sure you want to delete this report?');">Delete</a>
                                                         </div>
                                                     </div>
                                                 </td>

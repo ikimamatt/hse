@@ -19,6 +19,7 @@ CREATE TABLE daily_reports (
     total_monthly_bsoc_cards INT DEFAULT NULL,
     doctor VARCHAR(255) DEFAULT NULL,
     prepared_by VARCHAR(255) DEFAULT NULL,
+    concerns TEXT DEFAULT NULL,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 ) ENGINE=InnoDB;
 
