@@ -1,0 +1,312 @@
+Array
+(
+    [files] => Array
+        (
+            [name] => Array
+                (
+                    [0] => Array
+                        (
+                            [0] => HSE Daily Report 31 March 2025.xlsx
+                        )
+
+                    [1] => Array
+                        (
+                            [1] => HSE Daily Report 31 March 2025.xlsx
+                        )
+
+                )
+
+            [full_path] => Array
+                (
+                    [0] => Array
+                        (
+                            [0] => HSE Daily Report 31 March 2025.xlsx
+                        )
+
+                    [1] => Array
+                        (
+                            [1] => HSE Daily Report 31 March 2025.xlsx
+                        )
+
+                )
+
+            [type] => Array
+                (
+                    [0] => Array
+                        (
+                            [0] => application/vnd.openxmlformats-officedocument.spreadsheetml.sheet
+                        )
+
+                    [1] => Array
+                        (
+                            [1] => application/vnd.openxmlformats-officedocument.spreadsheetml.sheet
+                        )
+
+                )
+
+            [tmp_name] => Array
+                (
+                    [0] => Array
+                        (
+                            [0] => C:\Windows\Temp\php5F13.tmp
+                        )
+
+                    [1] => Array
+                        (
+                            [1] => C:\Windows\Temp\php5F14.tmp
+                        )
+
+                )
+
+            [error] => Array
+                (
+                    [0] => Array
+                        (
+                            [0] => 0
+                        )
+
+                    [1] => Array
+                        (
+                            [1] => 0
+                        )
+
+                )
+
+            [size] => Array
+                (
+                    [0] => Array
+                        (
+                            [0] => 33003
+                        )
+
+                    [1] => Array
+                        (
+                            [1] => 33003
+                        )
+
+                )
+
+        )
+
+)
+Array
+(
+    [files] => Array
+        (
+            [name] => Array
+                (
+                    [0] => Array
+                        (
+                            [0] => HSE_Daily_Report_2025-03-31 (7).xlsx
+                        )
+
+                )
+
+            [full_path] => Array
+                (
+                    [0] => Array
+                        (
+                            [0] => HSE_Daily_Report_2025-03-31 (7).xlsx
+                        )
+
+                )
+
+            [type] => Array
+                (
+                    [0] => Array
+                        (
+                            [0] => application/vnd.openxmlformats-officedocument.spreadsheetml.sheet
+                        )
+
+                )
+
+            [tmp_name] => Array
+                (
+                    [0] => Array
+                        (
+                            [0] => C:\Windows\Temp\php85D8.tmp
+                        )
+
+                )
+
+            [error] => Array
+                (
+                    [0] => Array
+                        (
+                            [0] => 0
+                        )
+
+                )
+
+            [size] => Array
+                (
+                    [0] => Array
+                        (
+                            [0] => 227208
+                        )
+
+                )
+
+        )
+
+)
+Script started at 2025-07-09 01:39:06\nFILES array: Array
+(
+    [files] => Array
+        (
+            [name] => Array
+                (
+                    [0] => Array
+                        (
+                            [0] => HSE Daily Report 31 March 2025.xlsx
+                        )
+
+                )
+
+            [full_path] => Array
+                (
+                    [0] => Array
+                        (
+                            [0] => HSE Daily Report 31 March 2025.xlsx
+                        )
+
+                )
+
+            [type] => Array
+                (
+                    [0] => Array
+                        (
+                            [0] => application/vnd.openxmlformats-officedocument.spreadsheetml.sheet
+                        )
+
+                )
+
+            [tmp_name] => Array
+                (
+                    [0] => Array
+                        (
+                            [0] => C:\Windows\Temp\php560A.tmp
+                        )
+
+                )
+
+            [error] => Array
+                (
+                    [0] => Array
+                        (
+                            [0] => 0
+                        )
+
+                )
+
+            [size] => Array
+                (
+                    [0] => Array
+                        (
+                            [0] => 33003
+                        )
+
+                )
+
+        )
+
+)
+\nScript started at 2025-07-09 01:40:34\nFILES array: Array
+(
+    [files] => Array
+        (
+            [name] => Array
+                (
+                    [0] => Array
+                        (
+                            [0] => HSE Daily Report 31 March 2025.xlsx
+                        )
+
+                )
+
+            [full_path] => Array
+                (
+                    [0] => Array
+                        (
+                            [0] => HSE Daily Report 31 March 2025.xlsx
+                        )
+
+                )
+
+            [type] => Array
+                (
+                    [0] => Array
+                        (
+                            [0] => application/vnd.openxmlformats-officedocument.spreadsheetml.sheet
+                        )
+
+                )
+
+            [tmp_name] => Array
+                (
+                    [0] => Array
+                        (
+                            [0] => C:\Windows\Temp\phpB0E4.tmp
+                        )
+
+                )
+
+            [error] => Array
+                (
+                    [0] => Array
+                        (
+                            [0] => 0
+                        )
+
+                )
+
+            [size] => Array
+                (
+                    [0] => Array
+                        (
+                            [0] => 33003
+                        )
+
+                )
+
+        )
+
+)
+\nScript started at 2025-07-09 01:41:12\nFILES array: Array
+(
+    [files] => Array
+        (
+            [name] => Array
+                (
+                    [0] => HSE_Daily_Report_2025-03-31 (7).xlsx
+                )
+
+            [full_path] => Array
+                (
+                    [0] => HSE_Daily_Report_2025-03-31 (7).xlsx
+                )
+
+            [type] => Array
+                (
+                    [0] => application/vnd.openxmlformats-officedocument.spreadsheetml.sheet
+                )
+
+            [tmp_name] => Array
+                (
+                    [0] => C:\Windows\Temp\php4286.tmp
+                )
+
+            [error] => Array
+                (
+                    [0] => 0
+                )
+
+            [size] => Array
+                (
+                    [0] => 227208
+                )
+
+        )
+
+)
+\n
