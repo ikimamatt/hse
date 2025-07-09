@@ -175,14 +175,14 @@ foreach ($all_reports as $report) {
                             <tr>
                                 <td class="font-weight-bold">ZYM Start-up date :</td>
                                 <td><?php echo htmlspecialchars($header_data['zyh_startup_date'] ?? ''); ?></td>
-                                <td class="font-weight-bold">No LTI Days :</td>
-                                <td><?php echo htmlspecialchars($header_data['no_lti_days'] ?? 'N/A'); ?> Days</td>
+                                <td class="font-weight-bold">No LTI Days (ZYM) :</td>
+                                <td><?php echo htmlspecialchars($header_data['no_lti_days_zyh'] ?? 'N/A'); ?> Days</td>
                             </tr>
                             <tr>
-                                <td class="font-weight-bold">ZYM-HSE Stats up-to-date:</td>
-                                <td><?php echo htmlspecialchars($header_data['zym_hse_stats'] ?? ''); ?></td>
-                                <td class="font-weight-bold">Man Hours without LTI :</td>
-                                <td><?php echo htmlspecialchars($header_data['man_hours_without_lti'] ?? 'N/A'); ?> Hours</td>
+                                <td class="font-weight-bold">PHM Start-up date :</td>
+                                <td><?php echo htmlspecialchars($header_data['phm_startup_date'] ?? ''); ?></td>
+                                <td class="font-weight-bold">No LTI Days (PHM) :</td>
+                                <td><?php echo htmlspecialchars($header_data['no_lti_days_phm'] ?? 'N/A'); ?> Days</td>
                             </tr>
                         </table>
                         <table class="report-table">

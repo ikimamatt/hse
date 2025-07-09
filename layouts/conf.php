@@ -1,7 +1,7 @@
 <?php
 // Konfigurasi Database
 $host       = 'localhost';      // Host database, biasanya 'localhost'
-$db_name    = 'hse'; // Nama database Anda
+$db_name    = 'gdap'; // Nama database Anda
 $username   = 'root';           // Username database
 $password   = '';               // Password database
 
